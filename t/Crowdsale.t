@@ -11,6 +11,8 @@ my $coinbase = $rpc_client->eth_coinbase;
 
 my $truffle_project = Ethereum::Utils::from_truffle("./t/builds/SimpleCrowdsale.json");
 
+die "can't read json" unless $truffle_project;
+
 my $contract = Ethereum::Contract->new({
     contract_abi    => $truffle_project->{abi},
     rpc_client      => $rpc_client,
@@ -28,9 +30,9 @@ $contract->deploy($truffle_project->{bytecode}, \@{[$start_time, $end_time, $rat
     
 my @account_list = @{$rpc_client->eth_accounts()};
 
-is Ethereum::Utils::to_big_int($contract->startTime()), $start_time;
-is Ethereum::Utils::to_big_int($contract->endTime()), $end_time;
-is Ethereum::Utils::to_big_int($contract->hasEnded()), 0;
-ok $contract->token;
+$contract->startTime->to_big_int, $start_time;
+$contract->endTime->to_big_int, $end_time;
+$contract->hasEnded->to_big_int, 0;
+ok $contract->token->to_hex;
 
 done_testing();

@@ -7,10 +7,11 @@ use Moose;
 use JSON;
 
 use Ethereum::RPC::Client;
+use Ethereum::ContractResponse;
 
 has contract_address => ( is => 'rw', isa => 'Str' );
-has contract_abi     => ( is => 'rw', isa => 'Str', required => 1 );
-has rpc_client       => ( is => 'rw', default => sub { Ethereum::RPC::Client->new } );
+has contract_abi     => ( is => 'ro', isa => 'Str', required => 1 );
+has rpc_client       => ( is => 'ro', default => sub { Ethereum::RPC::Client->new } );
 has defaults         => ( is => 'rw' );
 
 my $meta = __PACKAGE__->meta;
@@ -35,7 +36,7 @@ sub BUILD {
                 
                 my $function_id = $self->get_function_id($json_input->{name}, @{$json_input->{inputs}});
                 
-                return $self->call($function_id, $params, $payable);
+                return Ethereum::ContractResponse->new({ response => $self->call($function_id, $params, $payable) });
                 
             });
             
