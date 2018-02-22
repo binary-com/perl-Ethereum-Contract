@@ -4,14 +4,14 @@ use warnings;
 use Test::More;
 use Math::BigInt;
 
-use Ethereum::Contract;
-use Ethereum::Utils;
+use Ethereum::Contract::Contract;
+use Ethereum::Contract::Utils;
 
 my $rpc_client = Ethereum::RPC::Client->new;
 
 my $coinbase = $rpc_client->eth_coinbase;
 
-my $truffle_project = Ethereum::Utils::from_truffle("./t/builds/SimpleToken.json");
+my $truffle_project = Ethereum::Contract::Utils::from_truffle_build("./t/builds/SimpleToken.json");
 
 die "can't read json" unless $truffle_project;
 

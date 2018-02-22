@@ -1,11 +1,11 @@
-package Ethereum::Utils;
+package Ethereum::Contract::Utils;
 
 use strict;
 use warnings;
 
 use JSON;
 
-sub from_truffle {
+sub from_truffle_build {
     my $file = shift;
     
     my $document = do {

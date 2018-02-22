@@ -7,12 +7,14 @@ use Moose;
 use JSON;
 
 use Ethereum::RPC::Client;
-use Ethereum::ContractResponse;
+use Ethereum::Contract::ContractResponse;
 
 has contract_address => ( is => 'rw', isa => 'Str' );
 has contract_abi     => ( is => 'ro', isa => 'Str', required => 1 );
 has rpc_client       => ( is => 'ro', default => sub { Ethereum::RPC::Client->new } );
 has defaults         => ( is => 'rw' );
+
+my $contract_decoded = {};
 
 my $meta = __PACKAGE__->meta;
 
@@ -29,16 +31,21 @@ sub BUILD {
         if ($json_input->{type}  eq 'function') {
             
             my $name = $json_input->{name};
+            my @inputs = @{$json_input->{inputs}};
             
             $meta->add_method( $name => sub {
                 
                 my ($self, $params, $payable) = @_;
                 
-                my $function_id = $self->get_function_id($json_input->{name}, @{$json_input->{inputs}});
+                my $function_id = $self->get_function_id($name, @inputs);
                 
-                return Ethereum::ContractResponse->new({ response => $self->call($function_id, $params, $payable) });
+                my $res = $self->call($function_id, $params, $payable);
+                
+                return $res;
                 
             });
+            
+            $contract_decoded->{$name} = @inputs;
             
         }
     }
@@ -78,6 +85,9 @@ sub call {
 
     my ($self, $function_id, $params, $payable) = @_;
     
+    return Ethereum::Contract::ContractResponse->new({ error => "The number of parameters entered differs from ABI information" }) 
+        unless not $contract_decoded->{$function_id} or scalar $params == scalar $contract_decoded->{$function_id};
+    
     my $data = $function_id;
     
     foreach my $param (@{$params}) {
@@ -103,7 +113,7 @@ sub call {
         }, "latest"]);
     }
     
-    return $res;
+    return Ethereum::Contract::ContractResponse->new({ response => $res });
     
 }
 

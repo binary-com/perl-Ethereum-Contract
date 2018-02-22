@@ -1,4 +1,4 @@
-package Ethereum::ContractResponse;
+package Ethereum::Contract::ContractResponse;
 
 use strict;
 use warnings;
@@ -7,6 +7,7 @@ use Encode;
 use Math::BigInt;
 
 has response => ( is => 'ro' );
+has error    => ( is => 'ro' );
 
 sub to_big_int {
     my $self = shift;
@@ -28,6 +29,8 @@ sub to_hex {
     if( $self->response =~ /^0x[0-9A-F]+$/i ) {
         return $self->response;
     }
+    
+    return undef;
 }
 
 1;
