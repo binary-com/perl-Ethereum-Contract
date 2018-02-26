@@ -1,6 +1,7 @@
 use strict;
 use warnings;
 use Test::More;
+use Ethereum::RPC::Client;
 use Ethereum::Contract::Contract;
 use Ethereum::Contract::Utils;
 use Math::BigInt;

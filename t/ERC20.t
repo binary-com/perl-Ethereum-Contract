@@ -1,11 +1,10 @@
 use strict;
 use warnings;
-
 use Test::More;
-use Math::BigInt;
-
+use Ethereum::RPC::Client;
 use Ethereum::Contract::Contract;
 use Ethereum::Contract::Utils;
+use Math::BigInt;
 
 my $rpc_client = Ethereum::RPC::Client->new;
 
