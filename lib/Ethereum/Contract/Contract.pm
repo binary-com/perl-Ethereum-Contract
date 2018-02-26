@@ -63,16 +63,8 @@ sub get_function_id {
     my ($self, $function_string, @inputs) = @_;
     
     $function_string .= "(";
-    
-    my $comma = "";
-    
-    foreach my $input (@inputs) {
-        if($input->{type}) {
-            $function_string .= $comma . $input->{type};
-            $comma = ",";
-        }
-    }
-    
+    $function_string .= $_->{type} ? "$_->{type}," : "" for @inputs;
+    chop($function_string) if scalar @inputs > 0;
     $function_string .= ")";
     
     my $full_hex_function = $self->rpc_client->web3_sha3($function_string);
@@ -84,19 +76,12 @@ sub get_function_id {
 sub call {
 
     my ($self, $function_id, $params, $payable) = @_;
-    
+
     return Ethereum::Contract::ContractResponse->new({ error => "The number of parameters entered differs from ABI information" }) 
         unless not $contract_decoded->{$function_id} or scalar $params == scalar $contract_decoded->{$function_id};
-    
+
     my $data = $function_id;
-    
-    foreach my $param (@{$params}) {
-        
-        my $new_param = $self->get_hex_param($param);
-        
-        $data .= $new_param;
-        
-    }
+    $data .= $self->get_hex_param($_) for @{$params};
     
     my $res;
     if ($payable){
@@ -106,12 +91,15 @@ sub call {
             from    => $self->defaults->{from},
             gas     => $self->defaults->{gas},
         }]);
-    }else{
+    } else {
         $res = $self->rpc_client->eth_call([{
             to    => $self->contract_address,
             data  => $data,
         }, "latest"]);
     }
+    # VM Exception while processing transaction: invalid opcode
+    return Ethereum::Contract::ContractResponse->new({ error => $res }) 
+         if (index(lc $res,  "exception") != -1);
     
     return Ethereum::Contract::ContractResponse->new({ response => $res });
     
@@ -170,9 +158,18 @@ sub deploy {
         gas         => $self->defaults->{gas},
     }]);
     
+    # VM Exception while processing transaction: revert
+    return Ethereum::Contract::ContractResponse->new({ error => $res }) 
+         if (index(lc $res,  "exception") != -1);
+    
     my $deployed = $self->rpc_client->eth_getTransactionReceipt($res);
     
+    return Ethereum::Contract::ContractResponse->new({ error => "Can't get the contract address for transaction: $res" }) 
+         if not $deployed;
+    
     $self->contract_address($deployed->{contractAddress});
+    
+    return Ethereum::Contract::ContractResponse->new({ response => $res });
     
 }
 

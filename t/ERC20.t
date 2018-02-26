@@ -20,7 +20,8 @@ my $contract = Ethereum::Contract->new({
     rpc_client      => $rpc_client,
     defaults        => {from => $coinbase, gas => 3000000}});
     
-$contract->deploy($truffle_project->{bytecode});
+my $response = $contract->deploy($truffle_project->{bytecode});
+die $response->error if $response->error;
     
 my @account_list = @{$rpc_client->eth_accounts()};
 

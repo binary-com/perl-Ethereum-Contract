@@ -26,7 +26,8 @@ my $end_time     = $start_time + (86400 * 20);
 my $rate        = Math::BigInt->new(1000);
 my $wallet      = $coinbase;
 
-$contract->deploy($truffle_project->{bytecode}, \@{[$start_time, $end_time, $rate, $wallet]});
+my $response = $contract->deploy($truffle_project->{bytecode}, \@{[$start_time, $end_time, $rate, $wallet]});
+die $response->error if $response->error;
     
 my @account_list = @{$rpc_client->eth_accounts()};
 

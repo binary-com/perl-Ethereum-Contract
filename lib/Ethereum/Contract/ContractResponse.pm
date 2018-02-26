@@ -11,11 +11,13 @@ has error    => ( is => 'ro' );
 
 sub to_big_int {
     my $self = shift;
-    return Math::BigInt->from_hex($self->response);
+    return Math::BigInt->from_hex($self->response) if $self->response;
 }
 
 sub to_string {
     my $self = shift;
+    
+    return undef unless $self->response;
     
     my $packed_response = pack('H*', substr($self->response, -64));
     $packed_response =~ s/\0+$//;
@@ -25,6 +27,8 @@ sub to_string {
 
 sub to_hex {
     my $self = shift;
+    
+    return undef unless $self->response;
     
     if( $self->response =~ /^0x[0-9A-F]+$/i ) {
         return $self->response;
