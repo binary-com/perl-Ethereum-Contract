@@ -18,6 +18,21 @@ my $contract_decoded = {};
 
 my $meta = __PACKAGE__->meta;
 
+=head2 BUILD
+
+Constructor: Here we get all functions from the passed ABI and bring it to contract class subs.
+
+Parameters: 
+    contract_address (Optional - only if the contract already exists), 
+    contract_abi (Required - https://solidity.readthedocs.io/en/develop/abi-spec.html), 
+    rpc_client (Optional - Ethereum::RPC::Client(https://github.com/binary-com/perl-Ethereum-RPC-Client) - if not given, new instance will be created);
+    defaults (Optional - gas, from)
+    
+Return:
+    New contract instance
+
+=cut
+
 sub BUILD {
     
     $meta->make_mutable;
@@ -58,6 +73,22 @@ sub BUILD {
     
 }
 
+=head2 get_function_id
+
+Get the function and parameters and merge to create the hashed ethereum function ID
+
+Ex: function approve with the inputs address _spender and uint value must be represented as:
+    SHA3("approve(address,uint)")
+    
+Parameters: 
+    function_string (Required - the string function name )
+    inputs (Required - the input list given on the contract ABI)
+    
+Return:
+    New function ID hash
+
+=cut
+
 sub get_function_id {
     
     my ($self, $function_string, @inputs) = @_;
@@ -73,11 +104,32 @@ sub get_function_id {
     
 }
 
+=head2 call
+
+We prepare and send the transaction:
+    Already with the functionID (see get_function_id), we get all the inserted parameters in hexadecimal format (see get_hex_param)
+    and concatenate with the functionID. The result will be our transaction DATA.
+
+If payable is true we call the RPC function sendtransaction:
+    https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sendtransaction
+If payable is false we call the RPC function call:
+    https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call
+
+Parameters: 
+    function_id (Required - the hashed function string name with parameters)
+    params (Required - the parameters args given by the method call)
+    payable (Optional - Default: false, if true require that some gas be paid to execute the transaction)
+    
+Return:
+    Ethereum::Contract::ContractResponse instance
+
+=cut
+
 sub call {
 
     my ($self, $function_id, $params, $payable) = @_;
 
-    return Ethereum::Contract::ContractResponse->new({ error => "The number of parameters entered differs from ABI information" }) 
+    return Ethereum::Contract::ContractResponse->new({ error => "The parameters number entered differs from ABI information" }) 
         unless not $contract_decoded->{$function_id} or scalar $params == scalar $contract_decoded->{$function_id};
 
     my $data = $function_id;
@@ -105,6 +157,18 @@ sub call {
     
 }
 
+=head2 get_hex_param
+
+Convert the given value to hexadecimal format
+
+Parameters: 
+    function_id (Required - arg to be converted to hexadecimal)
+    
+Return:
+    Hexadecimal string
+
+=cut
+
 sub get_hex_param {
     my ($self, $param) = @_;
     
@@ -125,6 +189,20 @@ sub get_hex_param {
     
 }
 
+=head2 read_all_transactions_from_block
+
+Create a filter based on the given block to listen all transactions maded to the contract.
+
+The filter is killed before the list return, so for any request a new filter will be created.
+
+Parameters: 
+    block_number (Required - start search block)
+    
+Return:
+    https://github.com/ethereum/wiki/wiki/JSON-RPC#returns-42
+
+=cut
+
 sub read_all_transactions_from_block {
     
     my ($self, $block_number) = @_;
@@ -143,6 +221,19 @@ sub read_all_transactions_from_block {
     return $res;
 
 }
+
+=head2 deploy
+
+With given contract ABI and Bytecode, create a transaction with the contract code and return the contract address.
+
+Parameters: 
+    compiled (Required - Bytecode from the contract code)
+    params   (Required - params from the constructor contract code)
+    
+Return:
+    Ethereum::Contract::ContractResponse instance
+
+=cut
 
 sub deploy {
     my ($self, $compiled, $params) = @_;

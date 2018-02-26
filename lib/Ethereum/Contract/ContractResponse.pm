@@ -9,10 +9,34 @@ use Math::BigInt;
 has response => ( is => 'ro' );
 has error    => ( is => 'ro' );
 
+=head2 to_big_int
+
+Convert response to a Math::BigInt if not undef
+
+Parameters: 
+    hexadecimal response
+    
+Return:
+    new Math::BigInt
+
+=cut
+
 sub to_big_int {
     my $self = shift;
     return Math::BigInt->from_hex($self->response) if $self->response;
 }
+
+=head2 to_string
+
+Convert response to a string if not undef
+
+Parameters: 
+    hexadecimal response
+    
+Return:
+    string
+
+=cut
 
 sub to_string {
     my $self = shift;
@@ -24,6 +48,18 @@ sub to_string {
     
     return $packed_response;
 }
+
+=head2 to_hex
+
+Convert response to a hexadecimal if not undef and is not already a hex
+
+Parameters: 
+    hexadecimal response
+    
+Return:
+    hexadecimal string
+
+=cut
 
 sub to_hex {
     my $self = shift;

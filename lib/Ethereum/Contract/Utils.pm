@@ -5,6 +5,18 @@ use warnings;
 
 use JSON;
 
+=head2 to_hex
+
+Auxiliar to get bytecode and the ABI from the compiled truffle json.
+
+Parameters: 
+    file path
+    
+Return:
+    {abi, bytecode}
+
+=cut
+
 sub from_truffle_build {
     my $file = shift;
     
