@@ -1,1 +1,81 @@
-# perl-Ethereum-Contract
+[![Build Status](https://travis-ci.org/binary-com/perl-Ethereum-Contract.svg?branch=master)](https://travis-ci.org/binary-com/perl-Ethereum-Contract)
+[![codecov](https://codecov.io/gh/binary-com/perl-Ethereum-Contract/branch/master/graph/badge.svg)](https://codecov.io/gh/binary-com/perl-Ethereum-Contract)
+
+# NAME
+
+perl-Ethereum-Contract - Ethereum Contracts Abstraction using Perl.
+
+# SYNOPSIS
+
+    ```perl
+        #!/usr/bin/perl
+        use strict;
+        use warnings;
+        use Ethereum::RPC::Client;
+        use Ethereum::Contract::Contract;
+        
+        my $abi = ...
+        my $bytecode = ...
+        my $rpc_client = Ethereum::RPC::Client->new;
+        
+        my $coinbase = $rpc_client->eth_coinbase;
+        
+        my $contract = Ethereum::Contract->new({
+            contract_abi    => $abi,
+            rpc_client      => $rpc_client,
+            defaults        => {from => $coinbase, gas => 3000000}});
+            
+        # Deploying a Contract
+        my $contract->deploy($bytecode);
+        
+        die $response->error if $response->error;
+        
+        print $contract->...->to_big_int();```
+
+# DESCRIPTION
+
+perl-Ethereum-Contract is a library to enable perl to call the contract functions using RPC calls.
+
+# USAGE
+
+- Loading Contract
+
+    ```perl
+        my $contract = Ethereum::Contract->new({
+            contract_abi    => $abi,
+            rpc_client      => $rpc_client,
+            defaults        => {from => $coinbase, gas => 3000000}});
+    ```
+    
+- Deploying a Contract
+
+    ```perl
+        $contract->deploy($bytecode);
+    ```
+    
+- Calling a Contract function
+
+    ```perl
+        $contract->##function_name->($param1, $param2, $param3);
+    ```
+
+# CAVEATS
+
+This software is in an early state.
+
+### REQUIREMENTS
+* perl ^5
+* [Ethereum::RPC::Client](https://github.com/binary-com/perl-Ethereum-RPC-Client)
+
+# AUTHOR
+
+Binary.com
+
+# COPYRIGHT
+
+Copyright 2018 - Binary.com
+
+# LICENSE
+
+This library is free software; you can redistribute it and/or modify
+it under the same terms as Perl itself.
