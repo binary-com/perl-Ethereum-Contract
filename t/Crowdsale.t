@@ -27,14 +27,16 @@ my $end_time     = $start_time + (86400 * 20);
 my $rate        = Math::BigInt->new(1000);
 my $wallet      = $coinbase;
 
-my $response = $contract->deploy($truffle_project->{bytecode}, \@{[$start_time, $end_time, $rate, $wallet]});
+my $response = $contract->deploy($truffle_project->{bytecode}, $start_time, $end_time, $rate, $wallet)->get_contract_address(35);
 die $response->error if $response->error;
+
+$contract->contract_address($response->response);
     
 my @account_list = @{$rpc_client->eth_accounts()};
 
-is $contract->startTime->to_big_int, $start_time;
-is $contract->endTime->to_big_int, $end_time;
-is $contract->hasEnded->to_big_int, 0;
-ok $contract->token->to_hex;
+is $contract->startTime->call->to_big_int, $start_time;
+is $contract->endTime->call->to_big_int, $end_time;
+is $contract->hasEnded->call->to_big_int, 0;
+ok $contract->token->call->to_hex;
 
 done_testing();

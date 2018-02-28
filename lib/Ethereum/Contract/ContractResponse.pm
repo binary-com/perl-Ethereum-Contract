@@ -68,7 +68,6 @@ Return:
     hexadecimal string
 
 =cut
-
 sub to_hex {
     my $self = shift;
     

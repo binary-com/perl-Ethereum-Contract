@@ -19,22 +19,26 @@ my $contract = Ethereum::Contract->new({
     rpc_client      => $rpc_client,
     defaults        => {from => $coinbase, gas => 3000000}});
     
-my $response = $contract->deploy($truffle_project->{bytecode});
+my $response = $contract->deploy($truffle_project->{bytecode})->get_contract_address(35);
 die $response->error if $response->error;
+
+$contract->contract_address($response->response);
     
 my @account_list = @{$rpc_client->eth_accounts()};
 
-is $contract->name->to_string, "SimpleToken";
-is $contract->symbol->to_string, "SIM";
-is $contract->decimals->to_big_int, 18;
+is $contract->name->call->to_string, "SimpleToken";
+is $contract->symbol->call->to_string, "SIM";
+is $contract->decimals->call->to_big_int, 18;
 
-my $coinbase_balance = $contract->balanceOf([$coinbase])->to_big_int;
-my $account_one_balance = $contract->balanceOf([$account_list[1]])->to_big_int, 0;
+my $coinbase_balance = $contract->balanceOf($coinbase)->call->to_big_int;
+my $account_one_balance = $contract->balanceOf($account_list[1])->call->to_big_int;
 
-$contract->approve(\@{[$coinbase, 1000]}, 1);
-$contract->transferFrom(\@{[$coinbase, $account_list[1], 1000]}, 1);
+$contract->approve($account_list[1], 1000)->send;
 
-is $contract->balanceOf([$coinbase])->to_big_int, Math::BigInt->new($coinbase_balance - 1000);
-is $contract->balanceOf([$account_list[1]])->to_big_int, Math::BigInt->new($account_one_balance + 1000);
+is $contract->allowance($coinbase, $account_list[1])->call->to_big_int, 1000;
+$contract->transfer($account_list[1], 1000)->send;
+
+is $contract->balanceOf($coinbase)->call->to_big_int, Math::BigInt->new($coinbase_balance - 1000);
+is $contract->balanceOf($account_list[1])->call->to_big_int, Math::BigInt->new($account_one_balance + 1000);
 
 done_testing();
