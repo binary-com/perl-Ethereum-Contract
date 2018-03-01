@@ -21,13 +21,13 @@ has data             => ( is => 'rw' );
 sub call {
     
     my $self = shift;
-
+    
     my $res = $self->rpc_client->eth_call([{
         to    => $self->contract_address,
         data  => $self->data,
     }, "latest"]);
     
-    return Ethereum::Contract::ContractResponse->new({ error => $res }) 
+    return Ethereum::Contract::ContractResponse->new({ error => $res })
          if (index(lc $res,  "exception") != -1);
     
     return Ethereum::Contract::ContractResponse->new({ response => $res });
@@ -74,6 +74,11 @@ sub get_contract_address {
     return Ethereum::Contract::ContractResponse->new({ 
         error => "Can't get the contract address for transaction: $res", 
         response=> $res->response }) if not $deployed;
+        
+    # VM Exception while processing transaction: revert
+    # VM Exception while processing transaction: invalid OP_Code
+    return Ethereum::Contract::ContractResponse->new({ error => $res })
+         if (index(lc $res,  "exception") != -1);
     
     return Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} });    
     

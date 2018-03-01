@@ -195,7 +195,7 @@ Create a filter based on the given block to listen all transactions maded to the
 The filter is killed before the list return, so for any request a new filter will be created.
 
 Parameters: 
-    block_number (Required - start search block)
+    block_number (Optional - start search block)
     
 Return:
     https://github.com/ethereum/wiki/wiki/JSON-RPC#returns-42
@@ -206,7 +206,7 @@ sub read_all_transactions_from_block {
     
     my ($self, $block_number) = @_;
     
-    $block_number = $self->rpc_client->eth_blockNumber() unless $block_number;
+    $block_number = "0x". unpack("H*", "latest") unless $block_number;
     
     my $filter_id = $self->rpc_client->eth_newFilter([{
         address      => $self->contract_address,
@@ -221,18 +221,32 @@ sub read_all_transactions_from_block {
 
 }
 
-sub read_all_events_from_block {
+=head2 read_all_logs_from_block
+
+Create a filter based on the given block to listen all events from the contract.
+
+The filter is killed before the list return, so for any request a new filter will be created.
+
+Parameters: 
+    block_number (Optional - start search block)
+    
+Return:
+    https://github.com/ethereum/wiki/wiki/JSON-RPC#returns-42
+
+=cut
+
+sub read_all_logs_from_block {
     
     my ($self, $block_number) = @_;
     
-    $block_number = $self->rpc_client->eth_blockNumber() unless $block_number;
+    $block_number = "0x". unpack("H*", "latest") unless $block_number;
     
     my $filter_id = $self->rpc_client->eth_newFilter([{
         address      => $self->contract_address,
         fromBlock    => $block_number,
     }]);
     
-    my $res = $self->rpc_client->eth_getFilterChanges([$filter_id]);
+    my $res = $self->rpc_client->eth_getLogs([$filter_id]);
     
     $self->rpc_client->eth_uninstallFilter([$filter_id]);
     
