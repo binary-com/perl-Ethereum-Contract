@@ -57,9 +57,9 @@ sub send {
 
 sub get_contract_address {
     
-    my ($self, $wait_seconds) = @_;
+    my ($self, $wait_seconds, $transaction) = @_;
     
-    my $res = $self->send;
+    my $res = $transaction // $self->send;
     
     return $res if $res->error;
     
@@ -71,7 +71,7 @@ sub get_contract_address {
         $deployed = $self->rpc_client->eth_getTransactionReceipt($res->response);
     }
     
-    return Ethereum::Contract::ContractResponse->new({ 
+    return Ethereum::Contract::ContractResponse->new({
         error => "Can't get the contract address for transaction: $res", 
         response=> $res->response }) if not $deployed;
         
@@ -80,7 +80,7 @@ sub get_contract_address {
     return Ethereum::Contract::ContractResponse->new({ error => $res })
          if (index(lc $res,  "exception") != -1);
     
-    return Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} });    
+    return Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} });
     
 }
 

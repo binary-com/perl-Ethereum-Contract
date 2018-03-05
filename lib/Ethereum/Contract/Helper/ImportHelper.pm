@@ -1,11 +1,11 @@
-package Ethereum::Contract::Utils;
+package Ethereum::Contract::Helper::ImportHelper;
 
 use strict;
 use warnings;
 
 =head1 NAME
 
-    Ethereum::Contract::Utils - Utils
+    Ethereum::Contract::Helper::ImportHelper - ImportHelper
 
 =cut
 

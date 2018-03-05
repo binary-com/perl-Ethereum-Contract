@@ -17,6 +17,7 @@ use JSON;
 use Ethereum::RPC::Client;
 use Ethereum::Contract::ContractResponse;
 use Ethereum::Contract::ContractTransaction;
+use Ethereum::Contract::Helper::UnitConversion;
 
 has contract_address => ( is => 'rw', isa => 'Str' );
 has contract_abi     => ( is => 'ro', isa => 'Str', required => 1 );
@@ -74,11 +75,9 @@ sub BUILD {
         }
     }
     
-    $self->defaults->{gas} = sprintf("0x%x", $self->defaults->{gas}) if $self->defaults->{gas};
-    
+    $self->defaults->{gas} = sprintf("0x%x", $self->defaults->{gas} // Ethereum::Contract::Helper::UnitConversion::to_gwei(40)) if $self->defaults->{gas};
     $self->defaults->{from} = $self->rpc_client->eth_coinbase() unless $self->defaults->{from};
-    
-    $self->defaults->{gasPrice} = $self->rpc_client->eth_gasPrice();
+    $self->defaults->{gasPrice} = $self->rpc_client->eth_gasPrice() unless $self->defaults->{gasPrice};
     
     $meta->make_immutable;
     
@@ -109,8 +108,13 @@ sub get_function_id {
     chop($function_string) if scalar @inputs > 0;
     $function_string .= ")";
     
-    my $hex_function = "0x".unpack("H*", $function_string);
+    my $hex_function = "0x". unpack("H*", $function_string);
+    
+    print "Function hex: $hex_function \n";
+    
     my $sha3_hex_function = $self->rpc_client->web3_sha3($hex_function);
+    
+    print "Function name: $function_string and Function id: $sha3_hex_function";
     
     return substr($sha3_hex_function, 0, 10);
     
@@ -188,9 +192,9 @@ sub get_hex_param {
     
 }
 
-=head2 read_all_transactions_from_block
+=head2 read_all_events_from_block
 
-Create a filter based on the given block to listen all transactions maded to the contract.
+Create a filter based on the given block to listen all events sent by the contract.
 
 The filter is killed before the list return, so for any request a new filter will be created.
 
@@ -202,51 +206,21 @@ Return:
 
 =cut
 
-sub read_all_transactions_from_block {
+sub read_all_events_from_block {
     
-    my ($self, $block_number) = @_;
+    my ($self, $block_number, $function) = @_;
     
-    $block_number = "0x". unpack("H*", "latest") unless $block_number;
+    my $function_id = $self->get_function_id($function, $contract_decoded->{$function});
+    
+    $block_number = "0x".unpack("H*", "latest") unless $block_number;
     
     my $filter_id = $self->rpc_client->eth_newFilter([{
         address      => $self->contract_address,
         fromBlock    => $block_number,
+        topics       => [$function_id]
     }]);
     
     my $res = $self->rpc_client->eth_getFilterLogs([$filter_id]);
-    
-    $self->rpc_client->eth_uninstallFilter([$filter_id]);
-    
-    return $res;
-
-}
-
-=head2 read_all_logs_from_block
-
-Create a filter based on the given block to listen all events from the contract.
-
-The filter is killed before the list return, so for any request a new filter will be created.
-
-Parameters: 
-    block_number (Optional - start search block)
-    
-Return:
-    https://github.com/ethereum/wiki/wiki/JSON-RPC#returns-42
-
-=cut
-
-sub read_all_logs_from_block {
-    
-    my ($self, $block_number) = @_;
-    
-    $block_number = "0x". unpack("H*", "latest") unless $block_number;
-    
-    my $filter_id = $self->rpc_client->eth_newFilter([{
-        address      => $self->contract_address,
-        fromBlock    => $block_number,
-    }]);
-    
-    my $res = $self->rpc_client->eth_getLogs([$filter_id]);
     
     $self->rpc_client->eth_uninstallFilter([$filter_id]);
     
