@@ -41,4 +41,7 @@ $contract->transfer($account_list[1], 1000)->send;
 is $contract->balanceOf($coinbase)->call->to_big_int, Math::BigInt->new($coinbase_balance - 1000);
 is $contract->balanceOf($account_list[1])->call->to_big_int, Math::BigInt->new($account_one_balance + 1000);
 
+is scalar @{$contract->read_all_events_from_block("0x1", "approve")}, 1;
+is scalar @{$contract->read_all_events_from_block("0x1", "transfer")}, 1;
+
 done_testing();

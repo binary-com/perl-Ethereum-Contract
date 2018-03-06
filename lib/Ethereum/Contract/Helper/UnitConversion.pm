@@ -22,10 +22,8 @@ use Math::BigFloat;
 
 =cut
 
-my $WEI_CONSTANT = 1000000000000000000;
-
 sub to_wei {
-    return shift
+    return to_hex(shift);
 }
 
 sub to_kwei {
@@ -69,7 +67,7 @@ sub to_tether {
 }
 
 sub to_hex {
-    Math::BigFloat->new(shift)->to_hex;    
+    return "0x" . Math::BigFloat->new(shift)->to_hex;    
 }
 
 1;

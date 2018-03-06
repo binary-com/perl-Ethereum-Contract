@@ -70,12 +70,13 @@ sub BUILD {
                 
             });
             
-            $contract_decoded->{$name} = @inputs;
+            $contract_decoded->{$name} = \@inputs;
             
         }
     }
     
-    $self->defaults->{gas} = sprintf("0x%x", $self->defaults->{gas} // Ethereum::Contract::Helper::UnitConversion::to_gwei(40)) if $self->defaults->{gas};
+    $self->defaults->{gas} = Ethereum::Contract::Helper::UnitConversion::to_wei($self->defaults->{gas} // 4000000);
+        
     $self->defaults->{from} = $self->rpc_client->eth_coinbase() unless $self->defaults->{from};
     $self->defaults->{gasPrice} = $self->rpc_client->eth_gasPrice() unless $self->defaults->{gasPrice};
     
@@ -110,11 +111,7 @@ sub get_function_id {
     
     my $hex_function = "0x". unpack("H*", $function_string);
     
-    print "Function hex: $hex_function \n";
-    
     my $sha3_hex_function = $self->rpc_client->web3_sha3($hex_function);
-    
-    print "Function name: $function_string and Function id: $sha3_hex_function";
     
     return substr($sha3_hex_function, 0, 10);
     
@@ -210,7 +207,7 @@ sub read_all_events_from_block {
     
     my ($self, $block_number, $function) = @_;
     
-    my $function_id = $self->get_function_id($function, $contract_decoded->{$function});
+    my $function_id = $self->get_function_id($function, @{$contract_decoded->{$function}});
     
     $block_number = "0x".unpack("H*", "latest") unless $block_number;
     
@@ -220,7 +217,7 @@ sub read_all_events_from_block {
         topics       => [$function_id]
     }]);
     
-    my $res = $self->rpc_client->eth_getFilterLogs([$filter_id]);
+    my $res = $self->rpc_client->eth_getLogs([$filter_id]);
     
     $self->rpc_client->eth_uninstallFilter([$filter_id]);
     
