@@ -48,10 +48,11 @@ sub send {
     
     # VM Exception while processing transaction: revert
     # VM Exception while processing transaction: invalid OP_Code
-    return Ethereum::Contract::ContractResponse->new({ error => $res })
-         if (index(lc $res,  "exception") != -1);
-    
-    return Ethereum::Contract::ContractResponse->new({ response => $res });
+    if( $res =~ /^0x/ ) {
+        return Ethereum::Contract::ContractResponse->new({ response => $res });
+    }
+
+    return Ethereum::Contract::ContractResponse->new({ error => $res });
     
 }
 
@@ -78,7 +79,7 @@ sub get_contract_address {
     # VM Exception while processing transaction: revert
     # VM Exception while processing transaction: invalid OP_Code
     return Ethereum::Contract::ContractResponse->new({ error => $res })
-         if (index(lc $res,  "exception") != -1);
+         if (index(lc $deployed,  "invalid") != -1);
     
     return Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} });
     

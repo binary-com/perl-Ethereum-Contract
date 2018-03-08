@@ -62,7 +62,7 @@ sub BUILD {
                 
                 my ($self, @params, $payable) = @_;
                 
-                my $function_id = $self->get_function_id($name, @inputs);
+                my $function_id = substr($self->get_function_id($name, @inputs), 0, 10);
                 
                 my $res = $self->call($function_id, \@params, $payable);
                 
@@ -109,11 +109,11 @@ sub get_function_id {
     chop($function_string) if scalar @inputs > 0;
     $function_string .= ")";
     
-    my $hex_function = "0x". unpack("H*", $function_string);
+    my $hex_function = $self->append_prefix(unpack("H*", $function_string));
     
     my $sha3_hex_function = $self->rpc_client->web3_sha3($hex_function);
     
-    return substr($sha3_hex_function, 0, 10);
+    return $sha3_hex_function;
     
 }
 
@@ -152,7 +152,7 @@ sub call {
         contract_address=> $self->contract_address,
         rpc_client      => $self->rpc_client,
         defaults        => $self->defaults,
-        data            => $data,
+        data            => $self->append_prefix($data),
     );
     
 }
@@ -196,7 +196,8 @@ Create a filter based on the given block to listen all events sent by the contra
 The filter is killed before the list return, so for any request a new filter will be created.
 
 Parameters: 
-    block_number (Optional - start search block)
+    from_block ( Optional - start search block )
+    function     ( Required - function name )
     
 Return:
     https://github.com/ethereum/wiki/wiki/JSON-RPC#returns-42
@@ -205,21 +206,17 @@ Return:
 
 sub read_all_events_from_block {
     
-    my ($self, $block_number, $function) = @_;
+    my ($self, $from_block, $function) = @_;
     
     my $function_id = $self->get_function_id($function, @{$contract_decoded->{$function}});
     
-    $block_number = "0x".unpack("H*", "latest") unless $block_number;
+    $from_block = $self->append_prefix(unpack( "H*", $from_block // "latest" ));
     
-    my $filter_id = $self->rpc_client->eth_newFilter([{
+    my $res = $self->rpc_client->eth_getLogs([{
         address      => $self->contract_address,
-        fromBlock    => $block_number,
+        fromBlock    => $from_block,
         topics       => [$function_id]
     }]);
-    
-    my $res = $self->rpc_client->eth_getLogs([$filter_id]);
-    
-    $self->rpc_client->eth_uninstallFilter([$filter_id]);
     
     return $res;
 
@@ -257,6 +254,12 @@ sub deploy {
         data            => $compiled,
     );
     
+}
+
+sub append_prefix {
+    my ($self, $str) = @_;
+    return "0x$str" unless $str =~ /^0x/;
+    return $str;
 }
 
 no Moose;
