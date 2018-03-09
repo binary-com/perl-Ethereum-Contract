@@ -7,7 +7,7 @@ use 5.010000;
 use ExtUtils::MakeMaker 6.48;
 
 my %WriteMakefileArgs = (
-  "ABSTRACT" => "only if the contract already exists), contract_abi (Required - https://solidity.readthedocs.io/en/develop/abi-spec.html), rpc_client (Optional - Ethereum::RPC::Client(https://github.com/binary-com/perl-Ethereum-RPC-Client) - if not given, new instance will be created); defaults (Optional - gas, from)",
+  "ABSTRACT" => "Ethereum Contracts Abstraction using Perl",
   "AUTHOR" => "binary.com <cpan\@binary.com>",
   "CONFIGURE_REQUIRES" => {
     "ExtUtils::MakeMaker" => "6.48"
