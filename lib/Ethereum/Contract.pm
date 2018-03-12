@@ -178,7 +178,7 @@ sub get_hex_param {
     if( $param =~ /^0x[0-9A-F]+$/i ) {
         $new_param = sprintf( "%064s", substr($param, 2) );
     # Is integer
-    } elsif ( $param =~ /^[+-]?\d+$/ ) {
+    } elsif ( $param =~ /^[+-]?[0-9]+$/ ) {
         $new_param = sprintf( "%064s", sprintf("%x", $param) );
     # Is string
     } else {
@@ -263,6 +263,6 @@ sub append_prefix {
     return $str;
 }
 
-no Moose;
+no Moo;
 
 1;

@@ -85,4 +85,6 @@ sub get_contract_address {
     
 }
 
+no Moo;
+
 1;
