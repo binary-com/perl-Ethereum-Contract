@@ -10,7 +10,7 @@ use warnings;
 =cut
 
 
-use Moose;
+use Moo;
 use Encode;
 use Math::BigInt;
 use Math::BigFloat;

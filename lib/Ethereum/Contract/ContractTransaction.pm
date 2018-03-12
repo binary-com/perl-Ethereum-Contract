@@ -10,10 +10,10 @@ use warnings;
 =cut
 
 
-use Moose;
+use Moo;
 use Ethereum::Contract::ContractResponse;
 
-has contract_address => ( is => 'rw', isa => 'Str' );
+has contract_address => ( is => 'rw' );
 has rpc_client       => ( is => 'ro', default => sub { Ethereum::RPC::Client->new } );
 has defaults         => ( is => 'rw' );
 has data             => ( is => 'rw' );

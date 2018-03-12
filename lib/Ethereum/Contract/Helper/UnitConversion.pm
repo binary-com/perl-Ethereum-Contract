@@ -2,7 +2,7 @@ package Ethereum::Contract::Helper::UnitConversion;
 
 use strict;
 use warnings;
-use Math::BigFloat;
+use Math::BigInt;
 
 =head1 NAME
 
@@ -23,51 +23,52 @@ use Math::BigFloat;
 =cut
 
 sub to_wei {
-    return to_hex(shift);
+    return to_hex(shift, 1);
 }
 
 sub to_kwei {
-    return to_hex(sprintf "%.3f", shift);
+    return to_hex(shift, 1000);
 }
 
 sub to_mwei {
-    return to_hex(sprintf "%.6f", shift);
+    return to_hex(shift, 1000000);
 }
 
 sub to_gwei {
-    return to_hex(sprintf "%.9f", shift);
+    return to_hex(shift, 1000000000);
 }
 
 sub to_szabo {
-    return to_hex(sprintf "%.12f", shift);
+    return to_hex(shift, 1000000000000);
 }
 
 sub to_finney {
-    return to_hex(sprintf "%.15f", shift);
+    return to_hex(shift, 1000000000000000);
 }
 
 sub to_ether {
-    return to_hex(sprintf "%.18f", shift);
+    return to_hex(shift, 1000000000000000000);
 }
 
 sub to_kether {
-    return to_hex(sprintf "%.21f", shift);
+    return to_hex(shift, 1000000000000000000000);
 }
 
 sub to_mether {
-    return to_hex(sprintf "%.24f", shift);
+    return to_hex(shift, 1000000000000000000000000)
 }
 
 sub to_gether {
-    return to_hex(sprintf "%.27f", shift);
+    return to_hex(shift, 1000000000000000000000000000);
 }
 
 sub to_tether {
-    return to_hex(sprintf "%.30f", shift);
+    return to_hex(shift, 1000000000000000000000000000000);
 }
 
 sub to_hex {
-    return "0x" . Math::BigFloat->new(shift)->to_hex;    
+    my ($number, $precision) = @_;
+    return "0x" . Math::BigFloat->new($number)->bmul($precision)->to_hex;
 }
 
 1;

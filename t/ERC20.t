@@ -17,7 +17,7 @@ die "can't read json" unless $truffle_project;
 my $contract = Ethereum::Contract->new({
     contract_abi    => $truffle_project->{abi},
     rpc_client      => $rpc_client,
-    defaults        => {from => $coinbase, gas => 3000000}});
+    defaults        => {from => $coinbase, gas => 4000000}});
     
 my $response = $contract->deploy($truffle_project->{bytecode})->get_contract_address(35);
 die $response->error if $response->error;

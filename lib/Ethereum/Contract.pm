@@ -1,4 +1,5 @@
 package Ethereum::Contract;
+# ABSTRACT: Support for interacting with Ethereum contracts using the geth RPC interface
 
 use strict;
 use warnings;
@@ -7,11 +8,11 @@ our $VERSION = '0.001';
 
 =head1 NAME
 
-    Ethereum::Contract - Ethereum Contracts Abstraction using Perl
+    Ethereum::Contract - Support for interacting with Ethereum contracts using the geth RPC interface
 
 =cut
 
-use Moose;
+use Moo;
 use JSON;
 
 use Ethereum::RPC::Client;
@@ -19,8 +20,8 @@ use Ethereum::Contract::ContractResponse;
 use Ethereum::Contract::ContractTransaction;
 use Ethereum::Contract::Helper::UnitConversion;
 
-has contract_address => ( is => 'rw', isa => 'Str' );
-has contract_abi     => ( is => 'ro', isa => 'Str', required => 1 );
+has contract_address => ( is => 'rw' );
+has contract_abi     => ( is => 'ro', required => 1 );
 has rpc_client       => ( is => 'ro', default => sub { Ethereum::RPC::Client->new } );
 has defaults         => ( is => 'rw' );
 
