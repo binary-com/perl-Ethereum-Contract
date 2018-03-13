@@ -3,6 +3,8 @@ package Ethereum::Contract::Helper::ImportHelper;
 use strict;
 use warnings;
 
+use Path::Tiny;
+
 =head1 NAME
 
     Ethereum::Contract::Helper::ImportHelper - ImportHelper
@@ -27,12 +29,7 @@ Return:
 sub from_truffle_build {
     my $file = shift;
     
-    my $document = do {
-        local $/ = undef;
-        open my $fh, "<", $file
-            or return undef;
-        <$fh>;
-    };
+    my $document = path($file)->slurp_utf8;
     
     my $decoded_json = decode_json($document);
     
