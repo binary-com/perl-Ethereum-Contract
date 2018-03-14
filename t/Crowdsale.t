@@ -17,7 +17,7 @@ die "can't read json" unless $truffle_project;
 my $contract = Ethereum::Contract->new({
     contract_abi    => $truffle_project->{abi},
     rpc_client      => $rpc_client,
-    defaults        => {from => $coinbase, gas => 4000000}});
+});
     
 my $block = $rpc_client->eth_getBlockByNumber('latest', 1);
     
@@ -28,15 +28,20 @@ my $rate        = Math::BigInt->new(1000);
 my $wallet      = $coinbase;
 
 my $response = $contract->deploy($truffle_project->{bytecode}, $start_time, $end_time, $rate, $wallet)->get_contract_address(35);
-die $response->error if $response->error;
+ok $response->error;
+
+$contract->gas(4000000);
+$contract->from($coinbase);
+
+$response = $contract->deploy($truffle_project->{bytecode}, $start_time, $end_time, $rate, $wallet)->get_contract_address(35);
 
 $contract->contract_address($response->response);
     
 my @account_list = @{$rpc_client->eth_accounts()};
 
-is $contract->startTime->call->to_big_int, $start_time;
-is $contract->endTime->call->to_big_int, $end_time;
-is $contract->hasEnded->call->to_big_int, 0;
-ok $contract->token->call->to_hex;
+is $contract->invoke("startTime")->call->to_big_int, $start_time;
+is $contract->invoke("endTime")->call->to_big_int, $end_time;
+is $contract->invoke("hasEnded")->call->to_big_int, 0;
+ok $contract->invoke("token")->call->to_hex;
 
 done_testing();

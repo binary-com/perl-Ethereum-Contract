@@ -19,7 +19,7 @@ my %WriteMakefileArgs = (
   "PREREQ_PM" => {
     "Ethereum::RPC::Client" => "0.001",
     "Math::BigInt" => "1.999811",
-    "Moose" => "2.1804"
+    "Moo" => "2.003004"
   },
   "TEST_REQUIRES" => {
     "ExtUtils::MakeMaker" => 0,
@@ -43,7 +43,7 @@ my %FallbackPrereqs = (
   "IO::Handle" => 0,
   "IPC::Open3" => 0,
   "Math::BigInt" => "1.999811",
-  "Moose" => "2.1804",
+  "Moo" => "2.003004",
   "Test::CheckDeps" => "0.010",
   "Test::More" => "0.98"
 );

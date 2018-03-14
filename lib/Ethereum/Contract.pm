@@ -23,21 +23,23 @@ use Ethereum::Contract::Helper::UnitConversion;
 has contract_address => ( is => 'rw' );
 has contract_abi     => ( is => 'ro', required => 1 );
 has rpc_client       => ( is => 'ro', default => sub { Ethereum::RPC::Client->new } );
-has defaults         => ( is => 'rw' );
+has from             => ( is => 'rw');
+has gas              => ( is => 'rw');
+has gas_price        => ( is => 'rw');
 
 my $contract_decoded = {};
-
-my $meta = __PACKAGE__->meta;
 
 =head2 BUILD
 
 Constructor: Here we get all functions from the passed ABI and bring it to contract class subs.
 
 Parameters: 
-    contract_address (Optional - only if the contract already exists), 
-    contract_abi (Required - https://solidity.readthedocs.io/en/develop/abi-spec.html), 
-    rpc_client (Optional - Ethereum::RPC::Client(https://github.com/binary-com/perl-Ethereum-RPC-Client) - if not given, new instance will be created);
-    defaults (Optional - gas, from)
+    contract_address    (Optional - only if the contract already exists), 
+    contract_abi        (Required - https://solidity.readthedocs.io/en/develop/abi-spec.html), 
+    rpc_client          (Optional - Ethereum::RPC::Client(https://github.com/binary-com/perl-Ethereum-RPC-Client) - if not given, new instance will be created);
+    from                (Optional - Address)
+    gas                 (Optional - Integer gas)
+    gas_price           (Optional - Integer gasPrice)
     
 Return:
     New contract instance
@@ -45,44 +47,40 @@ Return:
 =cut
 
 sub BUILD {
-    
-    $meta->make_mutable;
-    
     my ($self) = @_;
     
     my @decoded_json = @{decode_json($self->contract_abi)};
-    my $actions = {};
     
     foreach my $json_input (@decoded_json) {
-        if ($json_input->{type}  eq 'function') {
-            
-            my $name = $json_input->{name};
-            my @inputs = @{$json_input->{inputs}};
-            
-            $meta->add_method( $name => sub {
-                
-                my ($self, @params, $payable) = @_;
-                
-                my $function_id = substr($self->get_function_id($name, @inputs), 0, 10);
-                
-                my $res = $self->call($function_id, \@params, $payable);
-                
-                return $res;
-                
-            });
-            
-            $contract_decoded->{$name} = \@inputs;
-            
-        }
+        $contract_decoded->{$json_input->{name}} = \@{$json_input->{inputs}} if $json_input->{type}  eq 'function';
     }
+
+    $self->from($self->rpc_client->eth_coinbase()) unless $self->from;
+    $self->gas_price($self->rpc_client->eth_gasPrice()) unless $self->gas_price;
     
-    $self->defaults->{gas} = Ethereum::Contract::Helper::UnitConversion::to_wei($self->defaults->{gas} // 4000000);
-        
-    $self->defaults->{from} = $self->rpc_client->eth_coinbase() unless $self->defaults->{from};
-    $self->defaults->{gasPrice} = $self->rpc_client->eth_gasPrice() unless $self->defaults->{gasPrice};
+}
+
+=head2 invoke
+
+Invokes all calls from ABI to the contract.
+
+Parameters: 
+    name (Required - the string function name )
+    params (Optional - the parameters)
     
-    $meta->make_immutable;
+Return:
+    Ethereum::Contract::ContractTransaction
+
+=cut
+
+sub invoke {
+    my ($self, $name, @params) = @_;
     
+    my $function_id = substr($self->get_function_id($name, @{$contract_decoded->{$name}}), 0, 10);
+    
+    my $res = $self->call($function_id, \@params);
+    
+    return $res;
 }
 
 =head2 get_function_id
@@ -91,7 +89,7 @@ Get the function and parameters and merge to create the hashed ethereum function
 
 Ex: function approve with the inputs address _spender and uint value must be represented as:
     SHA3("approve(address,uint)")
-    
+
 Parameters: 
     function_string (Required - the string function name )
     inputs (Required - the input list given on the contract ABI)
@@ -124,15 +122,9 @@ We prepare and send the transaction:
     Already with the functionID (see get_function_id), we get all the inserted parameters in hexadecimal format (see get_hex_param)
     and concatenate with the functionID. The result will be our transaction DATA.
 
-If payable is true we call the RPC function sendtransaction:
-    https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_sendtransaction
-If payable is false we call the RPC function call:
-    https://github.com/ethereum/wiki/wiki/JSON-RPC#eth_call
-
 Parameters: 
     function_id (Required - the hashed function string name with parameters)
     params (Required - the parameters args given by the method call)
-    payable (Optional - Default: false, if true require that some gas be paid to execute the transaction)
     
 Return:
     Ethereum::Contract::ContractTransaction instance
@@ -143,17 +135,18 @@ sub call {
 
     my ($self, $function_id, $params) = @_;
 
-    return Ethereum::Contract::ContractResponse->new({ error => "The parameters number entered differs from ABI information" }) 
+    return Ethereum::Contract::ContractResponse->new({ error => "The parameters count differs from ABI information" }) 
         unless not $contract_decoded->{$function_id} or scalar @{$params} == scalar $contract_decoded->{$function_id};
-
-    my $data = $function_id;
-    $data .= $self->get_hex_param($_) for @{$params};
+    
+    my $data = join("", $function_id, map { $self->get_hex_param($_) } @{$params});
     
     return Ethereum::Contract::ContractTransaction->new(
         contract_address=> $self->contract_address,
         rpc_client      => $self->rpc_client,
-        defaults        => $self->defaults,
         data            => $self->append_prefix($data),
+        from            => $self->from,
+        gas             => $self->gas,
+        gas_price       => $self->gas_price,
     );
     
 }
@@ -244,15 +237,14 @@ Return:
 sub deploy {
     my ($self, $compiled, @params) = @_;
     
-    foreach my $param (@params) {
-        my $new_param = $self->get_hex_param($param);
-        $compiled .= $new_param;
-    }
+    my $data = join("", $compiled, map { $self->get_hex_param($_) } @params);
     
     return Ethereum::Contract::ContractTransaction->new(
         rpc_client      => $self->rpc_client,
-        defaults        => $self->defaults,
-        data            => $compiled,
+        data            => $data,
+        from            => $self->from,
+        gas             => $self->gas,
+        gas_price       => $self->gas_price,
     );
     
 }
@@ -262,7 +254,5 @@ sub append_prefix {
     return "0x$str" unless $str =~ /^0x/;
     return $str;
 }
-
-no Moo;
 
 1;

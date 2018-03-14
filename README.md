@@ -23,14 +23,19 @@ perl-Ethereum-Contract - Ethereum Contracts Abstraction using Perl.
         my $contract = Ethereum::Contract->new({
             contract_abi    => $abi,
             rpc_client      => $rpc_client,
-            defaults        => {from => $coinbase, gas => 3000000}});
+            from            => $from,
+            gas             => $gas,
+        });
             
         # Deploying a Contract
         my $contract->deploy($bytecode);
         
         die $response->error if $response->error;
         
-        print $contract->...->to_big_int();```
+        print $contract->invoke("functionname", qw{param1 param2 param3})->call->to_big_int();
+        
+        my $hash = $contract->invoke("functionname", $param1, $param2, $param3)->send;
+    ```
 
 # DESCRIPTION
 
@@ -44,7 +49,9 @@ perl-Ethereum-Contract is a library to enable perl to call the contract function
         my $contract = Ethereum::Contract->new({
             contract_abi    => $abi,
             rpc_client      => $rpc_client,
-            defaults        => {from => $coinbase, gas => 3000000}});
+            from            => $coinbase,
+            gas             => 3000000,
+        });
     ```
     
 - Deploying a Contract
@@ -56,7 +63,7 @@ perl-Ethereum-Contract is a library to enable perl to call the contract function
 - Calling a Contract function
 
     ```perl
-        $contract->##function_name->($param1, $param2, $param3);
+        $contract->invoke($function_name, param1, param2, ...)->call->to_big_int;
     ```
 
 # CAVEATS

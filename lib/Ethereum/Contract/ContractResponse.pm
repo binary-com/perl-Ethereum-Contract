@@ -99,6 +99,4 @@ sub to_hex {
     return undef;
 }
 
-no Moo;
-
 1;

@@ -12,11 +12,14 @@ use warnings;
 
 use Moo;
 use Ethereum::Contract::ContractResponse;
+use Ethereum::Contract::Helper::UnitConversion;
 
 has contract_address => ( is => 'rw' );
 has rpc_client       => ( is => 'ro', default => sub { Ethereum::RPC::Client->new } );
-has defaults         => ( is => 'rw' );
 has data             => ( is => 'rw' );
+has from             => ( is => 'rw');
+has gas              => ( is => 'rw');
+has gas_price        => ( is => 'rw');
 
 sub call {
     
@@ -38,12 +41,14 @@ sub send {
     
     my $self = shift;
     
+    return Ethereum::Contract::ContractResponse->new({error => "the transaction can't be sent without the GAS parameter"}) unless $self->gas;
+    
     my $res = $self->rpc_client->eth_sendTransaction([{
-        to      => $self->contract_address,
-        from    => $self->defaults->{from},
-        gas     => $self->defaults->{gas},
-        gasPrice=> $self->defaults->{gasPrice},
-        data    => $self->data,
+        to          => $self->contract_address,
+        from        => $self->from,
+        gas         => Ethereum::Contract::Helper::UnitConversion::to_wei($self->gas),
+        gasPrice    => $self->gas_price,
+        data        => $self->data,
     }]);
     
     # VM Exception while processing transaction: revert
@@ -74,7 +79,7 @@ sub get_contract_address {
     
     return Ethereum::Contract::ContractResponse->new({
         error => "Can't get the contract address for transaction: $res", 
-        response=> $res->response }) if not $deployed;
+        response=> $res->response }) unless $deployed;
         
     # VM Exception while processing transaction: revert
     # VM Exception while processing transaction: invalid OP_Code
@@ -84,7 +89,5 @@ sub get_contract_address {
     return Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} });
     
 }
-
-no Moo;
 
 1;
