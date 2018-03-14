@@ -14,19 +14,19 @@ use Moo;
 use Ethereum::Contract::ContractResponse;
 use Ethereum::Contract::Helper::UnitConversion;
 
-has contract_address => ( is => 'rw' );
+has contract_address => ( is => 'ro' );
 has rpc_client       => ( is => 'ro', default => sub { Ethereum::RPC::Client->new } );
-has data             => ( is => 'rw' );
-has from             => ( is => 'rw');
-has gas              => ( is => 'rw');
-has gas_price        => ( is => 'rw');
+has data             => ( is => 'ro', required => 1 );
+has from             => ( is => 'ro');
+has gas              => ( is => 'ro');
+has gas_price        => ( is => 'ro');
 
 =head2 call
 
 Call - call a public functions and variables from a ethereum contract
     
 Return:
-    Ethereum::Contract::ContractResponse
+    Ethereum::Contract::ContractResponse, error message
 
 =cut
 
@@ -39,10 +39,10 @@ sub call {
         data  => $self->data,
     }, "latest"]);
     
-    return Ethereum::Contract::ContractResponse->new({ error => $res })
-         if (index(lc $res,  "exception") != -1);
+    return (Ethereum::Contract::ContractResponse->new({ response => $res }), undef) if $res and $res =~ /^0x/;
     
-    return Ethereum::Contract::ContractResponse->new({ response => $res });
+    return ( undef, $res );
+    
         
 }
 
@@ -53,7 +53,7 @@ Send - send a transaction to a payable functions from a ethereum contract
 The parameter GAS is required to send a payable request.
     
 Return:
-    Ethereum::Contract::ContractResponse
+    Ethereum::Contract::ContractResponse, error message
 
 =cut
 
@@ -61,7 +61,7 @@ sub send {
     
     my $self = shift;
     
-    return Ethereum::Contract::ContractResponse->new({error => "the transaction can't be sent without the GAS parameter"}) unless $self->gas;
+    return ( undef, "the transaction can't be sent without the GAS parameter" ) unless $self->gas;
     
     my $res = $self->rpc_client->eth_sendTransaction([{
         to          => $self->contract_address,
@@ -71,9 +71,9 @@ sub send {
         data        => $self->data,
     }]);
     
-    return Ethereum::Contract::ContractResponse->new({ response => $res }) if $res and $res =~ /^0x/;
+    return (Ethereum::Contract::ContractResponse->new({ response => $res }), undef) if $res and $res =~ /^0x/;
     
-    return Ethereum::Contract::ContractResponse->new({ error => $res });
+    return ( undef, $res );
     
 }
 
@@ -82,8 +82,8 @@ sub send {
 Try to get a contract address based on a transaction hash
 
 Parameters: 
-    $wait_seconds    (Optional - max time to wait for the contract address response), 
-    $transaction     (Optional - response of the send method, if not informed send a new transaction and then try to get the address ), 
+    $wait_seconds    ( Optional - max time to wait for the contract address response ), 
+    $send_response     ( Optional - response of the send method, if not informed send a new transaction and then try to get the address ), 
     
 Return:
     Ethereum::Contract::ContractResponse
@@ -92,28 +92,24 @@ Return:
 
 sub get_contract_address {
     
-    my ($self, $wait_seconds, $transaction) = @_;
+    my ($self, $wait_seconds, $send_response) = @_;
     
-    my $res = $transaction // $self->send;
+    my ($transaction, $error) = $self->send unless $send_response;
     
-    return $res if $res->error;
+    return ( undef, $error ) if $error;
     
-    my $deployed = $self->rpc_client->eth_getTransactionReceipt($res->response);
+    my $deployed = $self->rpc_client->eth_getTransactionReceipt($transaction->response);
     
     while ($wait_seconds and not $deployed and $wait_seconds > 0) {
         sleep(1);
         $wait_seconds--;
-        $deployed = $self->rpc_client->eth_getTransactionReceipt($res->response);
+        $deployed = $self->rpc_client->eth_getTransactionReceipt($transaction->response);
     }
     
-    return Ethereum::Contract::ContractResponse->new({
-        error => "Can't get the contract address for transaction: $res", 
-        response=> $res->response }) unless $deployed;
-    
-    return Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} }) 
-        if ref($deployed) eq 'HASH';
+    return ( Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} }), undef ) 
+        if $deployed and ref($deployed) eq 'HASH';
         
-    return Ethereum::Contract::ContractResponse->new({ error => $res });
+    return ( undef, "Can't get the contract address for transaction: $transaction" );
     
 }
 

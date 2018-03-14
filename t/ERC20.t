@@ -21,26 +21,49 @@ my $contract = Ethereum::Contract->new({
     gas             => 4000000,
 });
     
-my $response = $contract->deploy($truffle_project->{bytecode})->get_contract_address(35);
-die $response->error if $response->error;
+my ($message, $error) = $contract->invoke_deploy($truffle_project->{bytecode})->get_contract_address(35);
+die $error if $error;
 
-$contract->contract_address($response->response);
+$contract->contract_address($message->response);
     
 my @account_list = @{$rpc_client->eth_accounts()};
 
-is $contract->invoke("name")->call->to_string, "SimpleToken";
-is $contract->invoke("symbol")->call->to_string, "SIM";
-is $contract->invoke("decimals")->call->to_big_int, 18;
+($message, $error) = $contract->invoke("name")->call();
+ok !$error;
+is $message->to_string, "SimpleToken";
 
-my $coinbase_balance = $contract->invoke("balanceOf", $coinbase)->call->to_big_int;
-my $account_one_balance = $contract->invoke("balanceOf", $account_list[1])->call->to_big_int;
+($message, $error) = $contract->invoke("symbol")->call();
+ok !$error;
+is $message->to_string, "SIM";
 
-$contract->invoke("approve", $account_list[1], 1000)->send;
+($message, $error) = $contract->invoke("decimals")->call();
+ok !$error;
+is $message->to_big_int, 18;
 
-is $contract->invoke("allowance", $coinbase, $account_list[1])->call->to_big_int, 1000;
-$contract->invoke("transfer", $account_list[1], 1000)->send;
+($message, $error) = $contract->invoke("balanceOf", $coinbase)->call();
+ok !$error;
+my $coinbase_balance = $message->to_big_int;
 
-is $contract->invoke("balanceOf", $coinbase)->call->to_big_int, Math::BigInt->new($coinbase_balance - 1000);
-is $contract->invoke("balanceOf", $account_list[1])->call->to_big_int, Math::BigInt->new($account_one_balance + 1000);
+($message, $error) = $contract->invoke("balanceOf", $account_list[1])->call();
+ok !$error;
+my $account_one_balance = $message->to_big_int;
+
+$_, $error = $contract->invoke("approve", $account_list[1], 1000)->send;
+ok !$error;
+
+($message, $error) = $contract->invoke("allowance", $coinbase, $account_list[1])->call();
+ok !$error;
+is $message->to_big_int, 1000;
+
+$_, $error = $contract->invoke("transfer", $account_list[1], 1000)->send;
+ok !$error;
+
+($message, $error) = $contract->invoke("balanceOf", $coinbase)->call();
+ok !$error;
+is $message->to_big_int, Math::BigInt->new($coinbase_balance - 1000);
+
+($message, $error) = $contract->invoke("balanceOf", $account_list[1])->call();
+ok !$error;
+is $message->to_big_int, Math::BigInt->new($account_one_balance + 1000);
 
 done_testing();

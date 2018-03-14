@@ -16,7 +16,6 @@ use Math::BigInt;
 use Math::BigFloat;
 
 has response => ( is => 'ro' );
-has error    => ( is => 'ro' );
 
 =head2 to_big_int
 

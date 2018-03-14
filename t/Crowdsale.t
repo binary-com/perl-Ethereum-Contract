@@ -27,21 +27,32 @@ my $end_time     = $start_time + (86400 * 20);
 my $rate        = Math::BigInt->new(1000);
 my $wallet      = $coinbase;
 
-my $response = $contract->deploy($truffle_project->{bytecode}, $start_time, $end_time, $rate, $wallet)->get_contract_address(35);
-ok $response->error;
+my ($message, $error) = $contract->invoke_deploy($truffle_project->{bytecode}, $start_time, $end_time, $rate, $wallet)->get_contract_address(35);
+ok $error;
 
 $contract->gas(4000000);
 $contract->from($coinbase);
 
-$response = $contract->deploy($truffle_project->{bytecode}, $start_time, $end_time, $rate, $wallet)->get_contract_address(35);
+($message, $error) = $contract->invoke_deploy($truffle_project->{bytecode}, $start_time, $end_time, $rate, $wallet)->get_contract_address(35);
 
-$contract->contract_address($response->response);
+$contract->contract_address($message->response);
     
 my @account_list = @{$rpc_client->eth_accounts()};
 
-is $contract->invoke("startTime")->call->to_big_int, $start_time;
-is $contract->invoke("endTime")->call->to_big_int, $end_time;
-is $contract->invoke("hasEnded")->call->to_big_int, 0;
-ok $contract->invoke("token")->call->to_hex;
+($message, $error) = $contract->invoke("startTime")->call();
+ok !$error;
+is $message->to_big_int, $start_time;
+
+($message, $error) = $contract->invoke("endTime")->call();
+ok !$error;
+is $message->to_big_int, $end_time;
+
+($message, $error) = $contract->invoke("hasEnded")->call();
+ok !$error;
+is $message->to_big_int, 0;
+
+($message, $error) = $contract->invoke("token")->call();
+ok !$error;
+ok $message->to_hex;
 
 done_testing();
