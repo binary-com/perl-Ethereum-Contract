@@ -12,7 +12,7 @@ use Path::Tiny;
 =cut
 
 
-use JSON;
+use JSON::MaybeXS;
 
 =head2 to_hex
 

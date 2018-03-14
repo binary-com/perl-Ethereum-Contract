@@ -71,7 +71,7 @@ perl-Ethereum-Contract is a library to enable perl to call the contract function
 This software is in an early state.
 
 ### REQUIREMENTS
-* perl ^5
+* perl 5
 * [Ethereum::RPC::Client](https://github.com/binary-com/perl-Ethereum-RPC-Client)
 
 # AUTHOR

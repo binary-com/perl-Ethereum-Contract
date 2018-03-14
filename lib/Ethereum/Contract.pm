@@ -13,7 +13,7 @@ our $VERSION = '0.001';
 =cut
 
 use Moo;
-use JSON;
+use JSON::MaybeXS;
 
 use Ethereum::RPC::Client;
 use Ethereum::Contract::ContractResponse;
@@ -248,6 +248,12 @@ sub deploy {
     );
     
 }
+
+=head2 append_prefix
+
+Ensure that the given hexadecimal string starts with 0x.
+
+=cut
 
 sub append_prefix {
     my ($self, $str) = @_;
