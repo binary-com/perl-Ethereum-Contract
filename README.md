@@ -28,7 +28,8 @@ perl-Ethereum-Contract - Ethereum Contracts Abstraction using Perl.
         });
             
         # Deploying a Contract
-        my $contract->deploy($bytecode);
+        # get_contract_address ( number of seconds that will be expected to return the contract address )
+        my $contract->deploy($bytecode)->get_contract_address(35);
         
         die $response->error if $response->error;
         

@@ -21,6 +21,15 @@ has from             => ( is => 'rw');
 has gas              => ( is => 'rw');
 has gas_price        => ( is => 'rw');
 
+=head2 call
+
+Call - call a public functions and variables from a ethereum contract
+    
+Return:
+    Ethereum::Contract::ContractResponse
+
+=cut
+
 sub call {
     
     my $self = shift;
@@ -37,6 +46,17 @@ sub call {
         
 }
 
+=head2 send
+
+Send - send a transaction to a payable functions from a ethereum contract
+
+The parameter GAS is required to send a payable request.
+    
+Return:
+    Ethereum::Contract::ContractResponse
+
+=cut
+
 sub send {
     
     my $self = shift;
@@ -51,15 +71,24 @@ sub send {
         data        => $self->data,
     }]);
     
-    # VM Exception while processing transaction: revert
-    # VM Exception while processing transaction: invalid OP_Code
-    if( $res =~ /^0x/ ) {
-        return Ethereum::Contract::ContractResponse->new({ response => $res });
-    }
-
+    return Ethereum::Contract::ContractResponse->new({ response => $res }) if $res and $res =~ /^0x/;
+    
     return Ethereum::Contract::ContractResponse->new({ error => $res });
     
 }
+
+=head2 get_contract_address
+
+Try to get a contract address based on a transaction hash
+
+Parameters: 
+    $wait_seconds    (Optional - max time to wait for the contract address response), 
+    $transaction     (Optional - response of the send method, if not informed send a new transaction and then try to get the address ), 
+    
+Return:
+    Ethereum::Contract::ContractResponse
+
+=cut
 
 sub get_contract_address {
     
@@ -80,13 +109,11 @@ sub get_contract_address {
     return Ethereum::Contract::ContractResponse->new({
         error => "Can't get the contract address for transaction: $res", 
         response=> $res->response }) unless $deployed;
-        
-    # VM Exception while processing transaction: revert
-    # VM Exception while processing transaction: invalid OP_Code
-    return Ethereum::Contract::ContractResponse->new({ error => $res })
-         if (index(lc $deployed,  "invalid") != -1);
     
-    return Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} });
+    return Ethereum::Contract::ContractResponse->new({ response => $deployed->{contractAddress} }) 
+        if ref($deployed) eq 'HASH';
+        
+    return Ethereum::Contract::ContractResponse->new({ error => $res });
     
 }
 
