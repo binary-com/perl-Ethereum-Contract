@@ -22,9 +22,24 @@ use Ethereum::Contract::Helper::UnitConversion;
 
 has contract_address => ( is => 'rw' );
 has contract_abi     => ( is => 'ro', required => 1 );
-has rpc_client       => ( is => 'ro', required => 1, lazy => 1, default => sub { Ethereum::RPC::Client->new } );
-has from             => ( is => 'rw', required => 1, lazy => 1, default => sub { shift->rpc_client->eth_coinbase() } );
-has gas_price        => ( is => 'rw', required => 1, lazy => 1, default => sub { shift->rpc_client->eth_gasPrice() } );
+has rpc_client       => ( is => 'ro', lazy => 1 );
+
+sub _build_rpc_client {
+    return Ethereum::RPC::Client->new;
+}
+
+has from             => ( is => 'rw', lazy => 1 );
+
+sub _build_from {
+    return shift->rpc_client->eth_coinbase();
+}
+
+has gas_price        => ( is => 'rw', lazy => 1 );
+
+sub _build_gas_price {
+    return shift->rpc_client->eth_gasPrice();
+}
+
 has gas              => ( is => 'rw' );
 
 has contract_decoded => ( is => 'ro', default => sub{{}} );
@@ -130,7 +145,6 @@ Return:
 =cut
 
 sub _prepare_transaction {
-
     my ($self, $compiled_data, $params) = @_;
     
     my $data = join("", $compiled_data, map { $self->get_hex_param($_) } @{$params});
@@ -194,7 +208,6 @@ Return:
 =cut
 
 sub read_all_events_from_block {
-    
     my ($self, $from_block, $function) = @_;
     
     my $function_id = $self->get_function_id($function, @{$self->contract_decoded->{$function}});

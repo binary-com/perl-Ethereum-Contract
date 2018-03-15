@@ -79,10 +79,6 @@ This software is in an early state.
 
 Binary.com
 
-# COPYRIGHT
-
-Copyright 2018 - Binary.com
-
 # LICENSE
 
 This library is free software; you can redistribute it and/or modify

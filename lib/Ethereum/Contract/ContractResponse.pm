@@ -32,6 +32,7 @@ Return:
 sub to_big_int {
     my $self = shift;
     return Math::BigInt->from_hex($self->response) if $self->response;
+    return undef;
 }
 
 =head2 to_big_float
@@ -50,6 +51,7 @@ Return:
 sub to_big_float {
     my $self = shift;
     return Math::BigFloat->from_hex($self->response) if $self->response;
+    return undef;
 }
 
 =head2 to_string

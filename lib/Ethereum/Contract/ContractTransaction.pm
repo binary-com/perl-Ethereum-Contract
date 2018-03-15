@@ -15,7 +15,12 @@ use Ethereum::Contract::ContractResponse;
 use Ethereum::Contract::Helper::UnitConversion;
 
 has contract_address => ( is => 'ro' );
-has rpc_client       => ( is => 'ro', default => sub { Ethereum::RPC::Client->new } );
+has rpc_client       => ( is => 'ro', lazy => 1 );
+
+sub _build_rpc_client {
+    return Ethereum::RPC::Client->new;
+}
+
 has data             => ( is => 'ro', required => 1 );
 has from             => ( is => 'ro');
 has gas              => ( is => 'ro');
